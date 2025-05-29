@@ -5,7 +5,14 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from readeck.models import Provider, ReaderSettings, User, UserProfile, UserSettings
+from readeck.models import (
+    EmailSettings,
+    Provider,
+    ReaderSettings,
+    User,
+    UserProfile,
+    UserSettings,
+)
 
 
 class TestReaderSettings:
@@ -18,6 +25,22 @@ class TestReaderSettings:
         assert settings.font == "Arial"
         assert settings.font_size == 16
         assert settings.line_height == 24
+        assert settings.width == 0  # Default value
+        assert settings.justify == 0  # Default value
+        assert settings.hyphenation == 0  # Default value
+
+    def test_reader_settings_with_all_fields(self):
+        """Test creating reader settings with all fields."""
+        settings = ReaderSettings(
+            font="lora", font_size=2, line_height=2, width=0, justify=0, hyphenation=0
+        )
+
+        assert settings.font == "lora"
+        assert settings.font_size == 2
+        assert settings.line_height == 2
+        assert settings.width == 0
+        assert settings.justify == 0
+        assert settings.hyphenation == 0
 
     def test_reader_settings_validation(self):
         """Test reader settings validation."""
@@ -36,6 +59,32 @@ class TestUserSettings:
 
         assert settings.debug_info is True
         assert settings.reader_settings.font == "Arial"
+        assert settings.lang == "en-US"  # Default value
+        assert settings.addon_reminder is True  # Default value
+        assert settings.email_settings.reply_to == ""  # Default value
+
+    def test_user_settings_with_all_fields(self):
+        """Test creating user settings with all fields."""
+        settings = UserSettings(
+            debug_info=False,
+            lang="en-US",
+            addon_reminder=True,
+            email_settings={"reply_to": "", "epub_to": ""},
+            reader_settings={
+                "font": "lora",
+                "font_size": 2,
+                "line_height": 2,
+                "width": 0,
+                "justify": 0,
+                "hyphenation": 0,
+            },
+        )
+
+        assert settings.debug_info is False
+        assert settings.lang == "en-US"
+        assert settings.addon_reminder is True
+        assert settings.email_settings.reply_to == ""
+        assert settings.reader_settings.font == "lora"
 
     def test_nested_reader_settings(self):
         """Test nested reader settings creation."""
@@ -110,6 +159,20 @@ class TestProvider:
         assert "read" in provider.permissions
         assert "user" in provider.roles
 
+    def test_provider_with_empty_id_and_application(self):
+        """Test provider with empty id and application fields."""
+        provider = Provider(
+            name="http session",
+            permissions=["api:admin:users:read", "api:profile:read"],
+            roles=["admin"],
+        )
+
+        assert provider.application == ""  # Default value
+        assert provider.id == ""  # Default value
+        assert provider.name == "http session"
+        assert "api:admin:users:read" in provider.permissions
+        assert "admin" in provider.roles
+
     def test_empty_permissions_and_roles(self):
         """Test provider with empty permissions and roles."""
         provider = Provider(
@@ -131,11 +194,14 @@ class TestUserProfile:
         """Test creating a valid user profile."""
         profile = UserProfile.model_validate(mock_user_profile_data)
 
-        assert profile.provider.application == "readeck"
+        assert profile.provider.application == ""
+        assert profile.provider.name == "http session"
         assert profile.user.username == "testuser"
         assert profile.user.email == "test@example.com"
         assert profile.user.settings.debug_info is False
-        assert profile.user.settings.reader_settings.font == "Arial"
+        assert profile.user.settings.reader_settings.font == "lora"
+        assert profile.user.settings.lang == "en-US"
+        assert profile.user.settings.addon_reminder is True
 
     def test_user_profile_json_serialization(self, mock_user_profile_data):
         """Test JSON serialization of user profile."""
@@ -163,3 +229,65 @@ class TestUserProfile:
 
         with pytest.raises(ValidationError):
             UserProfile.model_validate(invalid_data)
+
+    def test_user_profile_backward_compatibility(self):
+        """Test that the models work with minimal required fields for backward compatibility."""
+        # Test with minimal required fields (like the old structure)
+        minimal_data = {
+            "provider": {
+                "name": "Local Provider",
+                "permissions": ["read"],
+                "roles": ["user"],
+            },
+            "user": {
+                "created": "2024-01-01T10:00:00Z",
+                "email": "test@example.com",
+                "updated": "2024-12-01T15:30:00Z",
+                "username": "testuser",
+                "settings": {
+                    "debug_info": False,
+                    "reader_settings": {
+                        "font": "Arial",
+                        "font_size": 16,
+                        "line_height": 24,
+                    },
+                },
+            },
+        }
+
+        profile = UserProfile.model_validate(minimal_data)
+
+        # Check that defaults are applied
+        assert profile.provider.id == ""  # Default value
+        assert profile.provider.application == ""  # Default value
+        assert profile.user.settings.lang == "en-US"  # Default value
+        assert profile.user.settings.addon_reminder is True  # Default value
+        assert profile.user.settings.email_settings.reply_to == ""  # Default value
+        assert profile.user.settings.reader_settings.width == 0  # Default value
+
+
+class TestEmailSettings:
+    """Test EmailSettings model."""
+
+    def test_valid_email_settings(self):
+        """Test creating valid email settings."""
+        settings = EmailSettings(
+            reply_to="reply@example.com", epub_to="epub@example.com"
+        )
+
+        assert settings.reply_to == "reply@example.com"
+        assert settings.epub_to == "epub@example.com"
+
+    def test_default_email_settings(self):
+        """Test email settings with default values."""
+        settings = EmailSettings()
+
+        assert settings.reply_to == ""
+        assert settings.epub_to == ""
+
+    def test_empty_email_settings(self):
+        """Test email settings with empty strings."""
+        settings = EmailSettings(reply_to="", epub_to="")
+
+        assert settings.reply_to == ""
+        assert settings.epub_to == ""

@@ -206,8 +206,8 @@ class TestGetUserProfile:
         assert isinstance(profile, UserProfile)
         assert profile.user.username == "testuser"
         assert profile.user.email == "test@example.com"
-        assert profile.provider.application == "readeck"
-        assert profile.user.settings.reader_settings.font == "Arial"
+        assert profile.provider.application == ""
+        assert profile.user.settings.reader_settings.font == "lora"
 
     @pytest.mark.asyncio
     async def test_get_user_profile_auth_error(

@@ -10,7 +10,14 @@ __email__ = "yash@yashvanzara.com"
 
 from .client import ReadeckClient
 from .exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError
-from .models import Provider, ReaderSettings, User, UserProfile, UserSettings
+from .models import (
+    EmailSettings,
+    Provider,
+    ReaderSettings,
+    User,
+    UserProfile,
+    UserSettings,
+)
 
 __all__ = [
     "ReadeckClient",
@@ -22,4 +29,5 @@ __all__ = [
     "Provider",
     "UserSettings",
     "ReaderSettings",
+    "EmailSettings",
 ]
