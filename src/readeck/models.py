@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 class EmailSettings(BaseModel):
@@ -45,6 +45,11 @@ class User(BaseModel):
     username: str = Field(..., description="Username")
     settings: UserSettings = Field(..., description="User settings")
 
+    @field_serializer("created", "updated", when_used="json")
+    def serialize_datetime(self, value: datetime) -> str:
+        """Serialize datetime fields to ISO format."""
+        return value.isoformat()
+
 
 class Provider(BaseModel):
     """Authentication provider information."""
@@ -64,7 +69,12 @@ class UserProfile(BaseModel):
     provider: Provider = Field(..., description="Authentication provider information")
     user: User = Field(..., description="User information and settings")
 
-    model_config = {"json_encoders": {datetime: lambda v: v.isoformat()}}
+    @field_serializer("provider", "user", when_used="json")
+    def serialize_nested_models(self, value: Any) -> Any:
+        """Serialize nested models that may contain datetime fields."""
+        if hasattr(value, "model_dump"):
+            return value.model_dump()
+        return value
 
 
 class BookmarkResource(BaseModel):
@@ -148,7 +158,12 @@ class Bookmark(BaseModel):
         default=None, description="Associated resources"
     )
 
-    model_config = {"json_encoders": {datetime: lambda v: v.isoformat()}}
+    @field_serializer("created", "updated", "published", when_used="json")
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        """Serialize datetime fields to ISO format."""
+        if value is None:
+            return None
+        return value.isoformat()
 
 
 class BookmarkListParams(BaseModel):
@@ -195,6 +210,13 @@ class BookmarkListParams(BaseModel):
         default=None, description="Filter by collection ID"
     )
 
+    @field_serializer("updated_since", when_used="json")
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        """Serialize datetime fields to ISO format."""
+        if value is None:
+            return None
+        return value.isoformat()
+
     def to_query_params(self) -> Dict[str, Any]:
         """Convert parameters to query string dictionary."""
         params: Dict[str, Any] = {}
@@ -217,3 +239,34 @@ class BookmarkListParams(BaseModel):
                 params[field_name] = field_value
 
         return params
+
+
+class BookmarkCreateRequest(BaseModel):
+    """Request payload for creating a new bookmark."""
+
+    url: str = Field(..., description="The URL to bookmark")
+    title: Optional[str] = Field(
+        default=None, description="Optional title for the bookmark"
+    )
+    labels: List[str] = Field(
+        default_factory=list, description="Optional labels for the bookmark"
+    )
+
+
+class BookmarkCreateResponse(BaseModel):
+    """Response from creating a new bookmark."""
+
+    message: str = Field(..., description="Response message")
+    status: int = Field(..., description="Response status code")
+
+
+class BookmarkCreateResult(BaseModel):
+    """Complete result from creating a bookmark, including response headers."""
+
+    response: BookmarkCreateResponse = Field(..., description="API response body")
+    bookmark_id: Optional[str] = Field(
+        default=None, description="ID of the created bookmark from Bookmark-Id header"
+    )
+    location: Optional[str] = Field(
+        default=None, description="URL of the created resource from Location header"
+    )

@@ -12,6 +12,9 @@ from .client import ReadeckClient
 from .exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError
 from .models import (
     Bookmark,
+    BookmarkCreateRequest,
+    BookmarkCreateResponse,
+    BookmarkCreateResult,
     BookmarkListParams,
     BookmarkResource,
     BookmarkResources,
@@ -35,6 +38,9 @@ __all__ = [
     "ReaderSettings",
     "EmailSettings",
     "Bookmark",
+    "BookmarkCreateRequest",
+    "BookmarkCreateResponse",
+    "BookmarkCreateResult",
     "BookmarkListParams",
     "BookmarkResource",
     "BookmarkResources",

@@ -32,6 +32,14 @@ async def main():
     profile = await client.get_user_profile()
     print(f"Welcome, {profile.user.username}!")
 
+    # Create a bookmark
+    result = await client.create_bookmark(
+        url="https://example.com/article",
+        title="Interesting Article",
+        labels=["reading", "tech"]
+    )
+    print(f"Bookmark created with ID: {result.bookmark_id}")
+
     await client.close()
 
 if __name__ == "__main__":
@@ -64,6 +72,60 @@ Returns a `UserProfile` object containing:
 - Authentication provider details
 - User settings and preferences
 - Reader settings (font, font size, line height)
+
+### Bookmarks
+
+#### Create Bookmark
+
+Create a new bookmark:
+
+```python
+# Minimal bookmark
+result = await client.create_bookmark(url="https://example.com")
+
+# Bookmark with title
+result = await client.create_bookmark(
+    url="https://example.com/article",
+    title="Article Title"
+)
+
+# Bookmark with labels
+result = await client.create_bookmark(
+    url="https://example.com/tutorial",
+    labels=["tutorial", "programming"]
+)
+
+# Complete bookmark
+result = await client.create_bookmark(
+    url="https://example.com/complete",
+    title="Complete Example",
+    labels=["example", "complete", "demo"]
+)
+```
+
+The `create_bookmark` method returns a `BookmarkCreateResult` object containing:
+- `response`: The API response with message and status
+- `bookmark_id`: The ID of the created bookmark (from response headers)
+- `location`: The URL of the created resource (from response headers)
+
+#### Get Bookmarks
+
+Retrieve bookmarks with optional filtering:
+
+```python
+# Get all bookmarks
+bookmarks = await client.get_bookmarks()
+
+# Get bookmarks with parameters
+from readeck import BookmarkListParams
+
+params = BookmarkListParams(
+    limit=10,
+    search="python",
+    labels="programming"
+)
+bookmarks = await client.get_bookmarks(params)
+```
 
 ## Development
 

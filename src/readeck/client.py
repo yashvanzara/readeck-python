@@ -13,7 +13,14 @@ from .exceptions import (
     ReadeckServerError,
     ReadeckValidationError,
 )
-from .models import Bookmark, BookmarkListParams, UserProfile
+from .models import (
+    Bookmark,
+    BookmarkCreateRequest,
+    BookmarkCreateResponse,
+    BookmarkCreateResult,
+    BookmarkListParams,
+    UserProfile,
+)
 
 
 class ReadeckClient:
@@ -186,6 +193,100 @@ class ReadeckClient:
                 )
         except ValidationError as e:
             raise ReadeckError(f"Failed to parse bookmarks response: {e}")
+
+    async def create_bookmark(
+        self, url: str, title: Optional[str] = None, labels: Optional[List[str]] = None
+    ) -> BookmarkCreateResult:
+        """Create a new bookmark.
+
+        Args:
+            url: The URL to bookmark
+            title: Optional title for the bookmark
+            labels: Optional list of labels for the bookmark
+
+        Returns:
+            BookmarkCreateResult: Result containing response data and headers
+
+        Raises:
+            ReadeckAuthError: If authentication fails
+            ReadeckValidationError: If request validation fails
+            ReadeckError: For other API errors
+        """
+        try:
+            # Prepare request payload
+            request_data = BookmarkCreateRequest(
+                url=url, title=title, labels=labels or []
+            )
+
+            # Make the request
+            url_endpoint = self._build_url("bookmarks")
+            response = await self._client.post(
+                url_endpoint,
+                json=request_data.model_dump(exclude_none=True),
+                headers={"Content-Type": "application/json"},
+            )
+
+            # Handle different status codes
+            if response.status_code == 401:
+                raise ReadeckAuthError(
+                    "Authentication failed. Please check your token.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code == 403:
+                raise ReadeckAuthError(
+                    "Access forbidden. Insufficient permissions.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code == 422:
+                error_data = None
+                try:
+                    error_data = response.json()
+                except Exception:
+                    pass
+                raise ReadeckValidationError(
+                    f"Validation error: {response.text}",
+                    status_code=response.status_code,
+                    response_data=error_data,
+                )
+            elif response.status_code == 202:
+                # 202 Accepted - bookmark creation accepted
+                pass
+            elif 500 <= response.status_code < 600:
+                raise ReadeckServerError(
+                    f"Server error: {response.text}",
+                    status_code=response.status_code,
+                )
+            elif not response.is_success:
+                raise ReadeckError(
+                    f"HTTP {response.status_code}: {response.text}",
+                    status_code=response.status_code,
+                )
+
+            # Parse JSON response
+            try:
+                json_response = response.json()
+            except Exception as e:
+                raise ReadeckError(f"Failed to parse JSON response: {e}")
+
+            try:
+                bookmark_response = BookmarkCreateResponse.model_validate(json_response)
+
+                # Extract headers
+                bookmark_id = response.headers.get("Bookmark-Id")
+                location = response.headers.get("Location")
+
+                return BookmarkCreateResult(
+                    response=bookmark_response,
+                    bookmark_id=bookmark_id,
+                    location=location,
+                )
+            except ValidationError as e:
+                raise ReadeckError(f"Failed to parse bookmark creation response: {e}")
+
+        except httpx.TimeoutException as e:
+            raise ReadeckError(f"Request timeout: {e}")
+        except httpx.RequestError as e:
+            raise ReadeckError(f"Request error: {e}")
 
     # Health check method for testing connectivity
     async def health_check(self) -> bool:
