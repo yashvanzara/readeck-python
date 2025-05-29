@@ -1,6 +1,6 @@
 """Readeck API client implementation."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import httpx
@@ -13,7 +13,7 @@ from .exceptions import (
     ReadeckServerError,
     ReadeckValidationError,
 )
-from .models import UserProfile
+from .models import Bookmark, BookmarkListParams, UserProfile
 
 
 class ReadeckClient:
@@ -74,7 +74,7 @@ class ReadeckClient:
 
     async def _make_request(
         self, method: str, endpoint: str, **kwargs: Any
-    ) -> Dict[str, Any]:
+    ) -> Union[Dict[str, Any], List[Any]]:
         """Make an HTTP request to the API.
 
         Args:
@@ -132,7 +132,7 @@ class ReadeckClient:
 
             # Parse JSON response
             try:
-                json_response: Dict[str, Any] = response.json()
+                json_response: Union[Dict[str, Any], List[Any]] = response.json()
                 return json_response
             except Exception as e:
                 raise ReadeckError(f"Failed to parse JSON response: {e}")
@@ -157,6 +157,35 @@ class ReadeckClient:
             return UserProfile.model_validate(data)
         except ValidationError as e:
             raise ReadeckError(f"Failed to parse user profile response: {e}")
+
+    async def get_bookmarks(
+        self, params: Optional[BookmarkListParams] = None
+    ) -> List[Bookmark]:
+        """Get a list of bookmarks.
+
+        Args:
+            params: Optional parameters for filtering and pagination
+
+        Returns:
+            List[Bookmark]: List of bookmark objects
+
+        Raises:
+            ReadeckAuthError: If authentication fails
+            ReadeckError: For other API errors
+        """
+        try:
+            query_params = params.to_query_params() if params else {}
+            data = await self._make_request("GET", "bookmarks", params=query_params)
+
+            # The API returns a list of bookmark objects directly
+            if isinstance(data, list):
+                return [Bookmark.model_validate(bookmark) for bookmark in data]
+            else:
+                raise ReadeckError(
+                    f"Unexpected response format: expected list, got {type(data)}"
+                )
+        except ValidationError as e:
+            raise ReadeckError(f"Failed to parse bookmarks response: {e}")
 
     # Health check method for testing connectivity
     async def health_check(self) -> bool:

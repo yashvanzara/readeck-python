@@ -294,3 +294,161 @@ class TestContextManager:
 
         # Client should be closed after context manager exits
         assert client._client.is_closed
+
+
+class TestReadeckClientBookmarks:
+    """Test ReadeckClient bookmark operations."""
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_empty_list(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test getting an empty list of bookmarks."""
+        httpx_mock.add_response(
+            method="GET",
+            url="https://test.readeck.com/api/bookmarks",
+            json=[],
+        )
+
+        bookmarks = await async_readeck_client.get_bookmarks()
+        assert bookmarks == []
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_with_data(
+        self, async_readeck_client, httpx_mock: HTTPXMock, mock_bookmark_data
+    ):
+        """Test getting bookmarks with data."""
+        httpx_mock.add_response(
+            method="GET",
+            url="https://test.readeck.com/api/bookmarks",
+            json=[mock_bookmark_data],
+        )
+
+        bookmarks = await async_readeck_client.get_bookmarks()
+        assert len(bookmarks) == 1
+
+        bookmark = bookmarks[0]
+        assert bookmark.id == "abc123"
+        assert bookmark.title == "Example Article"
+        assert bookmark.url == "https://example.com/article"
+        assert bookmark.type == "article"
+        assert bookmark.is_marked is False
+        assert bookmark.is_archived is False
+        assert len(bookmark.authors) == 1
+        assert bookmark.authors[0] == "John Doe"
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_with_params(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test getting bookmarks with filtering parameters."""
+        import re
+
+        from readeck.models import BookmarkListParams
+
+        params = BookmarkListParams(
+            limit=10,
+            offset=20,
+            search="python",
+            is_marked=True,
+            type=["article"],
+            sort=["created", "-title"],
+        )
+
+        # Mock the request using regex to match URL with any query parameters
+        httpx_mock.add_response(
+            method="GET",
+            url=re.compile(r"https://test\.readeck\.com/api/bookmarks.*"),
+            json=[],
+        )
+
+        bookmarks = await async_readeck_client.get_bookmarks(params)
+        assert bookmarks == []
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_with_datetime_params(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test getting bookmarks with datetime parameters."""
+        import re
+        from datetime import datetime
+
+        from readeck.models import BookmarkListParams
+
+        updated_since = datetime(2024, 1, 1, 12, 0, 0)
+        params = BookmarkListParams(updated_since=updated_since)
+
+        httpx_mock.add_response(
+            method="GET",
+            url=re.compile(r"https://test\.readeck\.com/api/bookmarks.*"),
+            json=[],
+        )
+
+        bookmarks = await async_readeck_client.get_bookmarks(params)
+        assert bookmarks == []
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_invalid_response_format(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test handling of invalid response format."""
+        # Return object instead of list
+        httpx_mock.add_response(
+            method="GET",
+            url="https://test.readeck.com/api/bookmarks",
+            json={"error": "not a list"},
+        )
+
+        with pytest.raises(ReadeckError) as exc_info:
+            await async_readeck_client.get_bookmarks()
+
+        assert "Unexpected response format" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_validation_error(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test handling of invalid bookmark data."""
+        # Return bookmark with missing required fields
+        invalid_bookmark = {"id": "123"}  # Missing required fields
+
+        httpx_mock.add_response(
+            method="GET",
+            url="https://test.readeck.com/api/bookmarks",
+            json=[invalid_bookmark],
+        )
+
+        with pytest.raises(ReadeckError) as exc_info:
+            await async_readeck_client.get_bookmarks()
+
+        assert "Failed to parse bookmarks response" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_auth_error(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test authentication error when getting bookmarks."""
+        httpx_mock.add_response(
+            method="GET",
+            url="https://test.readeck.com/api/bookmarks",
+            status_code=401,
+            text="Unauthorized",
+        )
+
+        with pytest.raises(ReadeckAuthError):
+            await async_readeck_client.get_bookmarks()
+
+    @pytest.mark.asyncio
+    async def test_get_bookmarks_server_error(
+        self, async_readeck_client, httpx_mock: HTTPXMock
+    ):
+        """Test server error when getting bookmarks."""
+        httpx_mock.add_response(
+            method="GET",
+            url="https://test.readeck.com/api/bookmarks",
+            status_code=500,
+            text="Internal Server Error",
+        )
+
+        with pytest.raises(ReadeckServerError):
+            await async_readeck_client.get_bookmarks()

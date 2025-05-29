@@ -11,6 +11,10 @@ __email__ = "yash@yashvanzara.com"
 from .client import ReadeckClient
 from .exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError
 from .models import (
+    Bookmark,
+    BookmarkListParams,
+    BookmarkResource,
+    BookmarkResources,
     EmailSettings,
     Provider,
     ReaderSettings,
@@ -30,4 +34,8 @@ __all__ = [
     "UserSettings",
     "ReaderSettings",
     "EmailSettings",
+    "Bookmark",
+    "BookmarkListParams",
+    "BookmarkResource",
+    "BookmarkResources",
 ]
