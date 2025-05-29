@@ -110,6 +110,11 @@ class ReadeckClient:
                     "Authentication failed. Please check your token.",
                     status_code=response.status_code,
                 )
+            elif response.status_code == 403:
+                raise ReadeckAuthError(
+                    "Access forbidden. Insufficient permissions.",
+                    status_code=response.status_code,
+                )
             elif response.status_code == 404:
                 raise ReadeckNotFoundError(
                     "Resource not found.",
@@ -287,6 +292,26 @@ class ReadeckClient:
             raise ReadeckError(f"Request timeout: {e}")
         except httpx.RequestError as e:
             raise ReadeckError(f"Request error: {e}")
+
+    async def get_bookmark(self, bookmark_id: str) -> Bookmark:
+        """Get details for a single bookmark.
+
+        Args:
+            bookmark_id: The ID of the bookmark to retrieve
+
+        Returns:
+            Bookmark: The bookmark object with detailed information
+
+        Raises:
+            ReadeckAuthError: If authentication fails (401, 403)
+            ReadeckNotFoundError: If bookmark is not found (404)
+            ReadeckError: For other API errors
+        """
+        try:
+            data = await self._make_request("GET", f"bookmarks/{bookmark_id}")
+            return Bookmark.model_validate(data)
+        except ValidationError as e:
+            raise ReadeckError(f"Failed to parse bookmark response: {e}")
 
     # Health check method for testing connectivity
     async def health_check(self) -> bool:

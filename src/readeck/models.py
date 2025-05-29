@@ -77,6 +77,16 @@ class UserProfile(BaseModel):
         return value
 
 
+class BookmarkLink(BaseModel):
+    """Link reference in a bookmark."""
+
+    content_type: str = Field(..., description="Content type of the link")
+    domain: str = Field(..., description="Domain of the link")
+    is_page: bool = Field(..., description="Whether this is a page link")
+    title: str = Field(..., description="Title of the link")
+    url: str = Field(..., description="URL of the link")
+
+
 class BookmarkResource(BaseModel):
     """Resource reference for a bookmark."""
 
@@ -156,6 +166,14 @@ class Bookmark(BaseModel):
     # Resources
     resources: Optional[BookmarkResources] = Field(
         default=None, description="Associated resources"
+    )
+
+    # Additional fields for detailed bookmark response
+    links: Optional[List[BookmarkLink]] = Field(
+        default=None, description="Links found in the bookmark"
+    )
+    read_anchor: Optional[str] = Field(
+        default=None, description="Reading anchor position"
     )
 
     @field_serializer("created", "updated", "published", when_used="json")

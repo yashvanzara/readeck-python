@@ -146,3 +146,6 @@ dev = [
     "pytest-cov>=5.0.0",
     "pytest-httpx>=0.22.0",
 ]
+
+[tool.flake8]
+ignore = ["E231"]
