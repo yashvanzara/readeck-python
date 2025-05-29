@@ -6,7 +6,7 @@ Readeck's bookmark and reading features.
 
 __version__ = "0.1.0"
 __author__ = "Yash Vanzara"
-__email__ = "yash@yashvanzara.com"
+__email__ = "yashvanzara@gmail.com"
 
 from .client import ReadeckClient
 from .exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError

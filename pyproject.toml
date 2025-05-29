@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8.1"
 authors = [
-    { name = "Yash Vanzara", email = "yash@yashvanzara.com" },
+    { name = "Yash Vanzara", email = "yashvanzara@gmail.com" },
 ]
 keywords = ["readeck", "api", "client", "bookmark", "reader"]
 classifiers = [
