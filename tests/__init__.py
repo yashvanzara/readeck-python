@@ -1,1 +1,1 @@
-"""Test package for readeck-python."""
+"""Test package for readeck."""
