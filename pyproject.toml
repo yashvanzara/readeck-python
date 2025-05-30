@@ -106,10 +106,6 @@ strict_equality = true
 module = "tests.*"
 disallow_untyped_defs = false
 
-[[tool.mypy.overrides]]
-module = "pydantic.*"
-ignore_errors = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
