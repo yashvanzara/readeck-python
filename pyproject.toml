@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Python client library for Readeck APIs"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.8.1"
+requires-python = ">=3.10"
 authors = [
     { name = "Yash Vanzara", email = "yashvanzara@gmail.com" },
 ]
@@ -19,8 +19,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -64,7 +62,7 @@ packages = ["src/readeck"]
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py310']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -90,7 +88,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
