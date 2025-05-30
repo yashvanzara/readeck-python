@@ -7,7 +7,7 @@ A Python client library for the Readeck API, providing easy access to Readeck's 
 - Full async/await support
 - Type hints with Pydantic models
 - Comprehensive error handling
-- Support for Python 3.8+
+- Support for Python 3.10+
 - Easy authentication with Bearer tokens
 
 ## Installation
