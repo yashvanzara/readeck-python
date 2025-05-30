@@ -13,7 +13,7 @@ A Python client library for the Readeck API, providing easy access to Readeck's 
 ## Installation
 
 ```bash
-pip install readeck-python
+pip install readeck
 ```
 
 ## Quick Start
