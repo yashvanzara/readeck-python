@@ -113,6 +113,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 addopts = [
     "--cov=src/readeck",
