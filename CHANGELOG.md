@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2025-05-31
+
+### Added
+- `export_bookmark_parsed()` - Markdown frontmatter parsing to metadata
+
 ## [0.1.3] - 2025-05-31
 
 ### Added

@@ -28,18 +28,7 @@ classifiers = [
 dependencies = [
     "httpx>=0.24.0",
     "pydantic>=2.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-httpx>=0.21.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0",
-    "pre-commit>=3.0.0",
+    "PyYAML>=6.0",
 ]
 
 [project.urls]
@@ -149,6 +138,7 @@ dev = [
     "pytest-cov>=5.0.0",
     "pytest-httpx>=0.22.0",
     "twine>=6.1.0",
+    "types-pyyaml>=6.0.12.20250516",
 ]
 
 [tool.flake8]

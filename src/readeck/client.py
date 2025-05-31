@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import httpx
+import yaml
 from pydantic import ValidationError
 
 from .exceptions import (
@@ -19,6 +20,8 @@ from .models import (
     BookmarkCreateResponse,
     BookmarkCreateResult,
     BookmarkListParams,
+    MarkdownExportMetadata,
+    MarkdownExportResult,
     UserProfile,
 )
 
@@ -387,6 +390,84 @@ class ReadeckClient:
             raise ReadeckError(f"Request timeout: {e}")
         except httpx.RequestError as e:
             raise ReadeckError(f"Request error: {e}")
+
+    async def export_bookmark_parsed(self, bookmark_id: str) -> MarkdownExportResult:
+        """Export a bookmark in markdown format with parsed frontmatter metadata.
+
+        Args:
+            bookmark_id: The ID of the bookmark to export
+
+        Returns:
+            MarkdownExportResult: Parsed result containing metadata and content
+
+        Raises:
+            ReadeckAuthError: If authentication fails (401, 403)
+            ReadeckNotFoundError: If bookmark is not found (404)
+            ReadeckError: For other API errors
+        """
+        # Get raw markdown content
+        raw_content = await self.export_bookmark(bookmark_id, format="md")
+
+        # Ensure we have a string (export_bookmark returns str for md format)
+        assert isinstance(raw_content, str), "Markdown export should return string"
+
+        # Parse frontmatter
+        metadata, content = self._parse_markdown_frontmatter(raw_content)
+
+        return MarkdownExportResult(
+            metadata=metadata, content=content, raw_content=raw_content
+        )
+
+    @staticmethod
+    def _parse_markdown_frontmatter(
+        content: str,
+    ) -> tuple[Optional[MarkdownExportMetadata], str]:
+        """Parse YAML frontmatter from markdown content.
+
+        Args:
+            content: Raw markdown content that may include YAML frontmatter
+
+        Returns:
+            tuple: (metadata, content_without_frontmatter)
+                   metadata is None if no frontmatter is found
+        """
+        # Check if content starts with YAML frontmatter delimiter
+        if not content.startswith("---\n"):
+            return None, content
+
+        # Find the end of frontmatter
+        lines = content.split("\n")
+        frontmatter_end = None
+
+        for i, line in enumerate(lines[1:], 1):  # Skip first --- line
+            if line.strip() == "---":
+                frontmatter_end = i
+                break
+
+        if frontmatter_end is None:
+            # No closing ---, treat as regular content
+            return None, content
+
+        try:
+            # Extract and parse YAML frontmatter
+            frontmatter_lines = lines[1:frontmatter_end]
+            frontmatter_text = "\n".join(frontmatter_lines)
+
+            # Parse YAML
+            frontmatter_data = yaml.safe_load(frontmatter_text) or {}
+
+            # Create metadata object
+            metadata = MarkdownExportMetadata.model_validate(frontmatter_data)
+
+            # Extract content without frontmatter
+            content_lines = lines[frontmatter_end + 1 :]  # Skip closing ---
+            content_without_frontmatter = "\n".join(content_lines).lstrip("\n")
+
+            return metadata, content_without_frontmatter
+
+        except (yaml.YAMLError, ValidationError):
+            # If parsing fails, return content as-is
+            return None, content
 
     # Health check method for testing connectivity
     async def health_check(self) -> bool:
