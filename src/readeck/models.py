@@ -288,3 +288,29 @@ class BookmarkCreateResult(BaseModel):
     location: Optional[str] = Field(
         default=None, description="URL of the created resource from Location header"
     )
+
+
+class MarkdownExportMetadata(BaseModel):
+    """Metadata parsed from markdown export YAML frontmatter."""
+
+    title: Optional[str] = Field(default=None, description="Article title")
+    saved: Optional[str] = Field(
+        default=None, description="Date when bookmark was saved"
+    )
+    published: Optional[str] = Field(default=None, description="Publication date")
+    website: Optional[str] = Field(default=None, description="Website domain")
+    source: Optional[str] = Field(default=None, description="Source URL")
+    authors: Optional[List[str]] = Field(default=None, description="Article authors")
+    labels: Optional[List[str]] = Field(default=None, description="Bookmark labels")
+
+
+class MarkdownExportResult(BaseModel):
+    """Result of markdown export with parsed metadata and content."""
+
+    metadata: Optional[MarkdownExportMetadata] = Field(
+        default=None, description="Parsed frontmatter metadata"
+    )
+    content: str = Field(..., description="Markdown content without frontmatter")
+    raw_content: str = Field(
+        ..., description="Original markdown content including frontmatter"
+    )
