@@ -9,7 +9,13 @@ __author__ = "Yash Vanzara"
 __email__ = "yashvanzara@gmail.com"
 
 from .client import ReadeckClient
-from .exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError
+from .exceptions import (
+    ReadeckAuthError,
+    ReadeckError,
+    ReadeckNotFoundError,
+    ReadeckServerError,
+    ReadeckValidationError,
+)
 from .models import (
     Bookmark,
     BookmarkCreateRequest,
@@ -32,6 +38,8 @@ __all__ = [
     "ReadeckError",
     "ReadeckAuthError",
     "ReadeckNotFoundError",
+    "ReadeckServerError",
+    "ReadeckValidationError",
     "UserProfile",
     "User",
     "Provider",

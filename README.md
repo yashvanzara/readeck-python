@@ -127,6 +127,34 @@ params = BookmarkListParams(
 bookmarks = await client.get_bookmarks(params)
 ```
 
+#### Export Bookmarks
+
+Export bookmarks in different formats:
+
+```python
+bookmark_id = "some_bookmark_id"
+
+# Export as markdown (default format)
+markdown_content = await client.export_bookmark(bookmark_id)
+
+# Export as markdown explicitly
+markdown_content = await client.export_bookmark(bookmark_id, format="md")
+
+# Export as EPUB
+epub_content = await client.export_bookmark(bookmark_id, format="epub")
+
+# Save to files
+with open("article.md", "w", encoding="utf-8") as f:
+    f.write(markdown_content)
+
+with open("article.epub", "wb") as f:
+    f.write(epub_content)
+```
+
+Supported export formats:
+- `md` (markdown) - Returns a string with the article content as markdown
+- `epub` - Returns bytes containing the EPUB file data
+
 ## Development
 
 This project uses `uv` for dependency management:
