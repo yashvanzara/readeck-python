@@ -4,12 +4,18 @@ A Python client library for the Readeck API, providing easy access to
 Readeck's bookmark and reading features.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __author__ = "Yash Vanzara"
 __email__ = "yashvanzara@gmail.com"
 
 from .client import ReadeckClient
-from .exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError
+from .exceptions import (
+    ReadeckAuthError,
+    ReadeckError,
+    ReadeckNotFoundError,
+    ReadeckServerError,
+    ReadeckValidationError,
+)
 from .models import (
     Bookmark,
     BookmarkCreateRequest,
@@ -32,6 +38,8 @@ __all__ = [
     "ReadeckError",
     "ReadeckAuthError",
     "ReadeckNotFoundError",
+    "ReadeckServerError",
+    "ReadeckValidationError",
     "UserProfile",
     "User",
     "Provider",

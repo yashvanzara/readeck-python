@@ -313,6 +313,81 @@ class ReadeckClient:
         except ValidationError as e:
             raise ReadeckError(f"Failed to parse bookmark response: {e}")
 
+    async def export_bookmark(
+        self, bookmark_id: str, format: str = "md"
+    ) -> Union[str, bytes]:
+        """Export a bookmark in the specified format.
+
+        Args:
+            bookmark_id: The ID of the bookmark to export
+            format: Export format - either "md" for markdown or "epub" for EPUB
+
+        Returns:
+            Union[str, bytes]: For markdown format, returns a string.
+                              For epub format, returns bytes.
+
+        Raises:
+            ReadeckAuthError: If authentication fails (401, 403)
+            ReadeckNotFoundError: If bookmark is not found (404)
+            ReadeckValidationError: If format is invalid
+            ReadeckError: For other API errors
+        """
+        # Validate format
+        if format not in ["md", "epub"]:
+            raise ReadeckValidationError(
+                f"Invalid format '{format}'. Allowed formats: md, epub"
+            )
+
+        # Set appropriate accept header based on format
+        accept_header = "text/markdown" if format == "md" else "application/epub+zip"
+
+        try:
+            endpoint = f"bookmarks/{bookmark_id}/article.{format}"
+            url = self._build_url(endpoint)
+
+            response = await self._client.get(
+                url,
+                headers={"Accept": accept_header},
+            )
+
+            # Handle different status codes
+            if response.status_code == 401:
+                raise ReadeckAuthError(
+                    "Authentication failed. Please check your token.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code == 403:
+                raise ReadeckAuthError(
+                    "Access forbidden. Insufficient permissions.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code == 404:
+                raise ReadeckNotFoundError(
+                    f"Bookmark '{bookmark_id}' not found or article not available.",
+                    status_code=response.status_code,
+                )
+            elif 500 <= response.status_code < 600:
+                raise ReadeckServerError(
+                    f"Server error: {response.text}",
+                    status_code=response.status_code,
+                )
+            elif not response.is_success:
+                raise ReadeckError(
+                    f"HTTP {response.status_code}: {response.text}",
+                    status_code=response.status_code,
+                )
+
+            # Return content based on format
+            if format == "md":
+                return response.text
+            else:  # epub
+                return response.content
+
+        except httpx.TimeoutException as e:
+            raise ReadeckError(f"Request timeout: {e}")
+        except httpx.RequestError as e:
+            raise ReadeckError(f"Request error: {e}")
+
     # Health check method for testing connectivity
     async def health_check(self) -> bool:
         """Check if the Readeck instance is accessible.

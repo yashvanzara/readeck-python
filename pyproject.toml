@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "readeck"
 dynamic = ["version"]
 description = "Python client library for Readeck APIs"
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
@@ -47,6 +47,7 @@ Homepage = "https://github.com/yashvanzara/readeck-python"
 Documentation = "https://github.com/yashvanzara/readeck-python#readme"
 Repository = "https://github.com/yashvanzara/readeck-python"
 Issues = "https://github.com/yashvanzara/readeck-python/issues"
+Changelog = "https://github.com/yashvanzara/readeck-python/blob/main/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "src/readeck/__init__.py"
@@ -54,6 +55,9 @@ path = "src/readeck/__init__.py"
 [tool.hatch.build.targets.sdist]
 include = [
     "/src",
+    "/CHANGELOG.md",
+    "/README.md",
+    "/LICENSE",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -135,6 +139,7 @@ exclude_lines = [
 [dependency-groups]
 dev = [
     "black>=24.8.0",
+    "build>=1.2.2.post1",
     "flake8>=7.1.2",
     "isort>=5.13.2",
     "mypy>=1.14.1",
