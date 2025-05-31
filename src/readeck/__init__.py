@@ -4,7 +4,7 @@ A Python client library for the Readeck API, providing easy access to
 Readeck's bookmark and reading features.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __author__ = "Yash Vanzara"
 __email__ = "yashvanzara@gmail.com"
 
