@@ -318,7 +318,9 @@ class Highlight(BaseModel):
     )
     text: str = Field(..., description="The highlighted text content")
     created: datetime = Field(..., description="When the highlight was created")
-    updated: Optional[datetime] = Field(default=None, description="When the highlight was last updated")
+    updated: Optional[datetime] = Field(
+        default=None, description="When the highlight was last updated"
+    )
 
     @field_serializer("created", "updated", when_used="json")
     def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
@@ -349,9 +351,7 @@ class HighlightListParams(BaseModel):
         le=100,
         description="Number of items per page (1-100)",
     )
-    offset: Optional[int] = Field(
-        default=None, ge=0, description="Pagination offset"
-    )
+    offset: Optional[int] = Field(default=None, ge=0, description="Pagination offset")
 
     def to_query_params(self) -> Dict[str, Union[str, int]]:
         """Convert parameters to query string dictionary."""

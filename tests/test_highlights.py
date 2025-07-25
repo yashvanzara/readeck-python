@@ -5,9 +5,8 @@ from datetime import datetime, timezone
 import pytest
 from pytest_httpx import HTTPXMock
 
-from readeck import ReadeckClient
+from readeck.exceptions import ReadeckAuthError, ReadeckServerError
 from readeck.models import Highlight, HighlightListResponse
-from readeck.exceptions import ReadeckAuthError, ReadeckError, ReadeckNotFoundError, ReadeckServerError
 
 
 @pytest.fixture
@@ -63,7 +62,7 @@ class TestGetHighlights:
                     '<https://test.readeck.com/api/bookmarks/annotations?page=1>; rel="first", '
                     '<https://test.readeck.com/api/bookmarks/annotations?page=1>; rel="last"'
                 ),
-            }
+            },
         )
 
         # Manually set the last_response on the client to simulate what should happen in the real client
@@ -88,13 +87,19 @@ class TestGetHighlights:
         assert response.total_count == 2
         assert response.page == 1
         assert response.total_pages == 1
-        
+
         # Now we can test the pagination links parsing
         assert response.links
         assert "first" in response.links
         assert "last" in response.links
-        assert response.links["first"] == "https://test.readeck.com/api/bookmarks/annotations?page=1"
-        assert response.links["last"] == "https://test.readeck.com/api/bookmarks/annotations?page=1"
+        assert (
+            response.links["first"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=1"
+        )
+        assert (
+            response.links["last"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=1"
+        )
 
         # Verify the highlights were parsed correctly
         highlight = response.items[0]
@@ -126,7 +131,7 @@ class TestGetHighlights:
                     '<https://test.readeck.com/api/bookmarks/annotations?page=1>; rel="prev", '
                     '<https://test.readeck.com/api/bookmarks/annotations?page=2>; rel="last"'
                 ),
-            }
+            },
         )
 
         # Manually set the last_response on the client to simulate what should happen in the real client
@@ -151,13 +156,19 @@ class TestGetHighlights:
         assert response.total_count == 2  # From Total-Count header
         assert response.page == 2  # From Current-Page header
         assert response.total_pages == 2  # From Total-Pages header
-        
+
         # Test the pagination links parsing
         assert response.links
         assert "prev" in response.links
         assert "last" in response.links
-        assert response.links["prev"] == "https://test.readeck.com/api/bookmarks/annotations?page=1"
-        assert response.links["last"] == "https://test.readeck.com/api/bookmarks/annotations?page=2"
+        assert (
+            response.links["prev"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=1"
+        )
+        assert (
+            response.links["last"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=2"
+        )
 
     @pytest.mark.asyncio
     async def test_get_highlights_auth_error(
@@ -169,11 +180,13 @@ class TestGetHighlights:
             method="GET",
             url="https://test.readeck.com/api/bookmarks/annotations",
             status_code=401,
-            json={"message": "Unauthorized", "status": 401}
+            json={"message": "Unauthorized", "status": 401},
         )
 
         # Verify the correct exception is raised
-        with pytest.raises(ReadeckAuthError, match="Authentication failed. Please check your token."):
+        with pytest.raises(
+            ReadeckAuthError, match="Authentication failed. Please check your token."
+        ):
             await async_readeck_client.get_highlights()
 
     @pytest.mark.asyncio
@@ -186,11 +199,13 @@ class TestGetHighlights:
             method="GET",
             url="https://test.readeck.com/api/bookmarks/annotations",
             status_code=403,
-            json={"message": "Forbidden", "status": 403}
+            json={"message": "Forbidden", "status": 403},
         )
 
         # Verify the correct exception is raised - the client.py code raises ReadeckAuthError with a specific message
-        with pytest.raises(ReadeckAuthError, match="Access forbidden. Insufficient permissions."):
+        with pytest.raises(
+            ReadeckAuthError, match="Access forbidden. Insufficient permissions."
+        ):
             await async_readeck_client.get_highlights()
 
     @pytest.mark.asyncio
@@ -203,7 +218,7 @@ class TestGetHighlights:
             method="GET",
             url="https://test.readeck.com/api/bookmarks/annotations",
             status_code=500,
-            json={"message": "Internal Server Error", "status": 500}
+            json={"message": "Internal Server Error", "status": 500},
         )
 
         # Verify the correct exception is raised - the client.py code raises ReadeckServerError with a specific message
@@ -221,7 +236,7 @@ class TestGetHighlights:
             url="https://test.readeck.com/api/bookmarks/annotations",
             json=[{"id": "1"}],  # Missing required fields
             status_code=200,
-            headers={}
+            headers={},
         )
 
         # This should raise a ValidationError from pydantic
@@ -258,7 +273,7 @@ class TestGetHighlights:
                 "Total-Count": "1",
                 "Current-Page": "1",
                 "Total-Pages": "1",
-            }
+            },
         )
 
         async_readeck_client._client.last_response = {
@@ -276,7 +291,9 @@ class TestGetHighlights:
         highlight = response.items[0]
         assert highlight.id == "highlight1"
         assert highlight.text == "This is a test highlight"
-        assert highlight.updated is None  # Should be None when missing from API response
+        assert (
+            highlight.updated is None
+        )  # Should be None when missing from API response
         assert highlight.created == datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
     @pytest.mark.asyncio
@@ -290,7 +307,7 @@ class TestGetHighlights:
             url="https://test.readeck.com/api/bookmarks/annotations",
             json=mock_highlight_data,
             status_code=200,
-            headers={}
+            headers={},
         )
 
         # No last_response set, should fall back to defaults
@@ -326,14 +343,14 @@ class TestGetHighlights:
                     '<https://test.readeck.com/api/bookmarks/annotations?page=4>; rel="next", '
                     '<https://test.readeck.com/api/bookmarks/annotations?page=5>; rel="last"'
                 ),
-            }
+            },
         )
 
         # Set the headers on the client
         async_readeck_client._client.last_response = {
             "headers": {
                 "Total-Count": "10",
-                "Current-Page": "3", 
+                "Current-Page": "3",
                 "Total-Pages": "5",
                 "Link": (
                     '<https://test.readeck.com/api/bookmarks/annotations?page=1>; rel="first", '
@@ -350,10 +367,22 @@ class TestGetHighlights:
         assert response.total_count == 10
         assert response.page == 3
         assert response.total_pages == 5
-        
+
         # Test all link relationships
         assert len(response.links) == 4
-        assert response.links["first"] == "https://test.readeck.com/api/bookmarks/annotations?page=1"
-        assert response.links["prev"] == "https://test.readeck.com/api/bookmarks/annotations?page=2"
-        assert response.links["next"] == "https://test.readeck.com/api/bookmarks/annotations?page=4"
-        assert response.links["last"] == "https://test.readeck.com/api/bookmarks/annotations?page=5"
+        assert (
+            response.links["first"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=1"
+        )
+        assert (
+            response.links["prev"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=2"
+        )
+        assert (
+            response.links["next"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=4"
+        )
+        assert (
+            response.links["last"]
+            == "https://test.readeck.com/api/bookmarks/annotations?page=5"
+        )

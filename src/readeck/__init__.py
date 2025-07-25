@@ -18,9 +18,6 @@ from .exceptions import (
 )
 from .models import (
     Bookmark,
-    Highlight,
-    HighlightListParams,
-    HighlightListResponse,
     BookmarkCreateRequest,
     BookmarkCreateResponse,
     BookmarkCreateResult,
@@ -29,6 +26,9 @@ from .models import (
     BookmarkResource,
     BookmarkResources,
     EmailSettings,
+    Highlight,
+    HighlightListParams,
+    HighlightListResponse,
     MarkdownExportMetadata,
     MarkdownExportResult,
     Provider,

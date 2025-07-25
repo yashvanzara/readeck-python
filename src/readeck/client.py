@@ -438,12 +438,12 @@ class ReadeckClient:
             ReadeckError: For other request errors
         """
         params = HighlightListParams(limit=limit, offset=offset)
-        
+
         try:
             # Make the request directly to access headers
             url = self._build_url("bookmarks/annotations")
             response = await self._client.get(url, params=params.to_query_params())
-            
+
             # Handle different status codes
             if response.status_code == 401:
                 raise ReadeckAuthError(
@@ -487,19 +487,19 @@ class ReadeckClient:
                 json_response = response.json()
             except Exception as e:
                 raise ReadeckError(f"Failed to parse JSON response: {e}")
-            
+
             # Parse the response
             if not isinstance(json_response, list):
                 json_response = []
-                
+
             items = [Highlight(**item) for item in json_response]
-            
+
             # Get pagination info from headers
             response_headers = response.headers
             total_count = int(response_headers.get("Total-Count", len(items)))
             current_page = int(response_headers.get("Current-Page", 1))
             total_pages = int(response_headers.get("Total-Pages", 1))
-            
+
             # Parse Link header if present
             links: Dict[str, Optional[str]] = {}
             if "Link" in response_headers:
@@ -511,7 +511,7 @@ class ReadeckClient:
                         url = url_part.strip(" <>")
                         rel = rel_part.split("=")[1].strip(' "')
                         links[rel] = url
-            
+
             return HighlightListResponse(
                 items=items,
                 total_count=total_count,
@@ -519,7 +519,7 @@ class ReadeckClient:
                 total_pages=total_pages,
                 links=links,
             )
-            
+
         except httpx.TimeoutException as e:
             raise ReadeckError(f"Request timeout: {e}")
         except httpx.RequestError as e:
