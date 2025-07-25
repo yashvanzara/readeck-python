@@ -4,7 +4,7 @@ A Python client library for the Readeck API, providing easy access to
 Readeck's bookmark and reading features.
 """
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __author__ = "Yash Vanzara"
 __email__ = "yashvanzara@gmail.com"
 
@@ -26,6 +26,9 @@ from .models import (
     BookmarkResource,
     BookmarkResources,
     EmailSettings,
+    Highlight,
+    HighlightListParams,
+    HighlightListResponse,
     MarkdownExportMetadata,
     MarkdownExportResult,
     Provider,
@@ -49,6 +52,9 @@ __all__ = [
     "ReaderSettings",
     "EmailSettings",
     "Bookmark",
+    "Highlight",
+    "HighlightListParams",
+    "HighlightListResponse",
     "BookmarkCreateRequest",
     "BookmarkCreateResponse",
     "BookmarkCreateResult",
