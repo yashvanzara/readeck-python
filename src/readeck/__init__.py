@@ -18,6 +18,9 @@ from .exceptions import (
 )
 from .models import (
     Bookmark,
+    Highlight,
+    HighlightListParams,
+    HighlightListResponse,
     BookmarkCreateRequest,
     BookmarkCreateResponse,
     BookmarkCreateResult,
@@ -49,6 +52,9 @@ __all__ = [
     "ReaderSettings",
     "EmailSettings",
     "Bookmark",
+    "Highlight",
+    "HighlightListParams",
+    "HighlightListResponse",
     "BookmarkCreateRequest",
     "BookmarkCreateResponse",
     "BookmarkCreateResult",

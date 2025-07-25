@@ -20,6 +20,9 @@ from .models import (
     BookmarkCreateResponse,
     BookmarkCreateResult,
     BookmarkListParams,
+    Highlight,
+    HighlightListParams,
+    HighlightListResponse,
     MarkdownExportMetadata,
     MarkdownExportResult,
     UserProfile,
@@ -417,6 +420,112 @@ class ReadeckClient:
         return MarkdownExportResult(
             metadata=metadata, content=content, raw_content=raw_content
         )
+
+    async def get_highlights(
+        self, limit: Optional[int] = None, offset: Optional[int] = None
+    ) -> HighlightListResponse:
+        """Fetch a list of highlights/annotations.
+
+        Args:
+            limit: Maximum number of highlights to return (1-100)
+            offset: Pagination offset for the results
+
+        Returns:
+            HighlightListResponse containing the list of highlights and pagination info
+
+        Raises:
+            ReadeckAuthError: If authentication fails (401)
+            ReadeckError: For other request errors
+        """
+        params = HighlightListParams(limit=limit, offset=offset)
+        
+        try:
+            # Make the request directly to access headers
+            url = self._build_url("bookmarks/annotations")
+            response = await self._client.get(url, params=params.to_query_params())
+            
+            # Handle different status codes
+            if response.status_code == 401:
+                raise ReadeckAuthError(
+                    "Authentication failed. Please check your token.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code == 403:
+                raise ReadeckAuthError(
+                    "Access forbidden. Insufficient permissions.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code == 404:
+                raise ReadeckNotFoundError(
+                    "Resource not found.",
+                    status_code=response.status_code,
+                )
+            elif response.status_code in (400, 422):
+                error_data = None
+                try:
+                    error_data = response.json()
+                except Exception:
+                    pass
+                raise ReadeckValidationError(
+                    f"Validation error: {response.text}",
+                    status_code=response.status_code,
+                    response_data=error_data,
+                )
+            elif 500 <= response.status_code < 600:
+                raise ReadeckServerError(
+                    f"Server error: {response.text}",
+                    status_code=response.status_code,
+                )
+            elif not response.is_success:
+                raise ReadeckError(
+                    f"HTTP {response.status_code}: {response.text}",
+                    status_code=response.status_code,
+                )
+
+            # Parse JSON response
+            try:
+                json_response = response.json()
+            except Exception as e:
+                raise ReadeckError(f"Failed to parse JSON response: {e}")
+            
+            # Parse the response
+            if not isinstance(json_response, list):
+                json_response = []
+                
+            items = [Highlight(**item) for item in json_response]
+            
+            # Get pagination info from headers
+            response_headers = response.headers
+            total_count = int(response_headers.get("Total-Count", len(items)))
+            current_page = int(response_headers.get("Current-Page", 1))
+            total_pages = int(response_headers.get("Total-Pages", 1))
+            
+            # Parse Link header if present
+            links: Dict[str, Optional[str]] = {}
+            if "Link" in response_headers:
+                # Example: <https://readeck.example.com/api/bookmarks/annotations?limit=1&offset=199>; rel="previous"
+                for link in response_headers["Link"].split(","):
+                    link = link.strip()
+                    if ";" in link:
+                        url_part, rel_part = link.split(";", 1)
+                        url = url_part.strip(" <>")
+                        rel = rel_part.split("=")[1].strip(' "')
+                        links[rel] = url
+            
+            return HighlightListResponse(
+                items=items,
+                total_count=total_count,
+                page=current_page,
+                total_pages=total_pages,
+                links=links,
+            )
+            
+        except httpx.TimeoutException as e:
+            raise ReadeckError(f"Request timeout: {e}")
+        except httpx.RequestError as e:
+            raise ReadeckError(f"Request error: {e}")
+        except ValidationError as e:
+            raise ReadeckError(f"Failed to parse highlights response: {e}")
 
     @staticmethod
     def _parse_markdown_frontmatter(

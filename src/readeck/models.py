@@ -1,7 +1,7 @@
 """Pydantic models for Readeck API responses."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, field_serializer
 
@@ -302,6 +302,65 @@ class MarkdownExportMetadata(BaseModel):
     source: Optional[str] = Field(default=None, description="Source URL")
     authors: Optional[List[str]] = Field(default=None, description="Article authors")
     labels: Optional[List[str]] = Field(default=None, description="Bookmark labels")
+
+
+class Highlight(BaseModel):
+    """A single highlight/annotation from a bookmark."""
+
+    id: str = Field(..., description="Unique identifier for the highlight")
+    href: str = Field(..., description="API URL for the highlight")
+    bookmark_id: str = Field(..., description="ID of the bookmarked content")
+    bookmark_href: str = Field(..., description="API URL of the bookmarked content")
+    bookmark_title: str = Field(..., description="Title of the bookmarked content")
+    bookmark_url: str = Field(..., description="URL of the bookmarked content")
+    bookmark_site_name: Optional[str] = Field(
+        default=None, description="Name of the website where the content is from"
+    )
+    text: str = Field(..., description="The highlighted text content")
+    created: datetime = Field(..., description="When the highlight was created")
+    updated: Optional[datetime] = Field(default=None, description="When the highlight was last updated")
+
+    @field_serializer("created", "updated", when_used="json")
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        """Serialize datetime fields to ISO format."""
+        return value.isoformat() if value is not None else None
+
+
+class HighlightListResponse(BaseModel):
+    """Response model for the list highlights endpoint."""
+
+    items: List[Highlight] = Field(
+        default_factory=list, description="List of highlights"
+    )
+    total_count: int = Field(..., description="Total number of highlights available")
+    page: int = Field(..., description="Current page number")
+    total_pages: int = Field(..., description="Total number of pages available")
+    links: Dict[str, Optional[str]] = Field(
+        default_factory=dict, description="Pagination links"
+    )
+
+
+class HighlightListParams(BaseModel):
+    """Parameters for fetching highlights list."""
+
+    limit: Optional[int] = Field(
+        default=None,
+        ge=1,
+        le=100,
+        description="Number of items per page (1-100)",
+    )
+    offset: Optional[int] = Field(
+        default=None, ge=0, description="Pagination offset"
+    )
+
+    def to_query_params(self) -> Dict[str, Union[str, int]]:
+        """Convert parameters to query string dictionary."""
+        params: Dict[str, Union[str, int]] = {}
+        if self.limit is not None:
+            params["limit"] = self.limit
+        if self.offset is not None:
+            params["offset"] = self.offset
+        return params
 
 
 class MarkdownExportResult(BaseModel):
