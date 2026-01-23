@@ -1,7 +1,7 @@
 """Pydantic models for Readeck API responses."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_serializer
 
@@ -57,10 +57,10 @@ class Provider(BaseModel):
     application: str = Field(default="", description="The registered application name")
     id: str = Field(default="", description="Authentication provider ID (token ID)")
     name: str = Field(..., description="Provider name")
-    permissions: List[str] = Field(
+    permissions: list[str] = Field(
         ..., description="Permissions granted for this session"
     )
-    roles: List[str] = Field(..., description="Roles granted for this session")
+    roles: list[str] = Field(..., description="Roles granted for this session")
 
 
 class UserProfile(BaseModel):
@@ -91,25 +91,23 @@ class BookmarkResource(BaseModel):
     """Resource reference for a bookmark."""
 
     src: str = Field(..., description="Resource URL")
-    height: Optional[int] = Field(default=0, description="Resource height")
-    width: Optional[int] = Field(default=0, description="Resource width")
+    height: int | None = Field(default=0, description="Resource height")
+    width: int | None = Field(default=0, description="Resource width")
 
 
 class BookmarkResources(BaseModel):
     """Collection of bookmark resources."""
 
-    article: Optional[BookmarkResource] = Field(
+    article: BookmarkResource | None = Field(
         default=None, description="Article resource"
     )
-    icon: Optional[BookmarkResource] = Field(default=None, description="Icon resource")
-    image: Optional[BookmarkResource] = Field(
-        default=None, description="Image resource"
-    )
-    log: Optional[BookmarkResource] = Field(default=None, description="Log resource")
-    props: Optional[BookmarkResource] = Field(
+    icon: BookmarkResource | None = Field(default=None, description="Icon resource")
+    image: BookmarkResource | None = Field(default=None, description="Image resource")
+    log: BookmarkResource | None = Field(default=None, description="Log resource")
+    props: BookmarkResource | None = Field(
         default=None, description="Properties resource"
     )
-    thumbnail: Optional[BookmarkResource] = Field(
+    thumbnail: BookmarkResource | None = Field(
         default=None, description="Thumbnail resource"
     )
 
@@ -121,14 +119,14 @@ class Bookmark(BaseModel):
     href: str = Field(..., description="Original bookmark URL")
     url: str = Field(..., description="Canonical URL")
     title: str = Field(..., description="Bookmark title")
-    description: Optional[str] = Field(default="", description="Bookmark description")
-    site: Optional[str] = Field(default="", description="Site domain")
-    site_name: Optional[str] = Field(default="", description="Site name")
-    authors: List[str] = Field(default_factory=list, description="Article authors")
+    description: str | None = Field(default="", description="Bookmark description")
+    site: str | None = Field(default="", description="Site domain")
+    site_name: str | None = Field(default="", description="Site name")
+    authors: list[str] = Field(default_factory=list, description="Article authors")
     type: str = Field(..., description="Bookmark type (article, photo, video)")
-    document_type: Optional[str] = Field(default="", description="Document type")
-    lang: Optional[str] = Field(default="", description="Content language")
-    text_direction: Optional[str] = Field(
+    document_type: str | None = Field(default="", description="Document type")
+    lang: str | None = Field(default="", description="Content language")
+    text_direction: str | None = Field(
         default="ltr", description="Text direction (ltr, rtl)"
     )
 
@@ -154,30 +152,28 @@ class Bookmark(BaseModel):
     state: int = Field(default=0, description="Bookmark state")
 
     # Labels and organization
-    labels: List[str] = Field(default_factory=list, description="Bookmark labels")
+    labels: list[str] = Field(default_factory=list, description="Bookmark labels")
 
     # Timestamps
     created: datetime = Field(..., description="Creation timestamp")
     updated: datetime = Field(..., description="Last update timestamp")
-    published: Optional[datetime] = Field(
+    published: datetime | None = Field(
         default=None, description="Publication timestamp"
     )
 
     # Resources
-    resources: Optional[BookmarkResources] = Field(
+    resources: BookmarkResources | None = Field(
         default=None, description="Associated resources"
     )
 
     # Additional fields for detailed bookmark response
-    links: Optional[List[BookmarkLink]] = Field(
+    links: list[BookmarkLink] | None = Field(
         default=None, description="Links found in the bookmark"
     )
-    read_anchor: Optional[str] = Field(
-        default=None, description="Reading anchor position"
-    )
+    read_anchor: str | None = Field(default=None, description="Reading anchor position")
 
     @field_serializer("created", "updated", "published", when_used="json")
-    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         """Serialize datetime fields to ISO format."""
         if value is None:
             return None
@@ -187,57 +183,49 @@ class Bookmark(BaseModel):
 class BookmarkListParams(BaseModel):
     """Parameters for fetching bookmark lists."""
 
-    limit: Optional[int] = Field(default=None, description="Number of items per page")
-    offset: Optional[int] = Field(default=None, description="Pagination offset")
-    sort: Optional[List[str]] = Field(default=None, description="Sorting parameters")
-    search: Optional[str] = Field(default=None, description="Full text search string")
-    title: Optional[str] = Field(default=None, description="Filter by bookmark title")
-    author: Optional[str] = Field(default=None, description="Filter by author name")
-    site: Optional[str] = Field(
-        default=None, description="Filter by site name or domain"
-    )
-    type: Optional[List[str]] = Field(
-        default=None, description="Filter by bookmark type"
-    )
-    labels: Optional[str] = Field(default=None, description="Filter by labels")
-    is_loaded: Optional[bool] = Field(
-        default=None, description="Filter by loaded state"
-    )
-    has_errors: Optional[bool] = Field(
+    limit: int | None = Field(default=None, description="Number of items per page")
+    offset: int | None = Field(default=None, description="Pagination offset")
+    sort: list[str] | None = Field(default=None, description="Sorting parameters")
+    search: str | None = Field(default=None, description="Full text search string")
+    title: str | None = Field(default=None, description="Filter by bookmark title")
+    author: str | None = Field(default=None, description="Filter by author name")
+    site: str | None = Field(default=None, description="Filter by site name or domain")
+    type: list[str] | None = Field(default=None, description="Filter by bookmark type")
+    labels: str | None = Field(default=None, description="Filter by labels")
+    is_loaded: bool | None = Field(default=None, description="Filter by loaded state")
+    has_errors: bool | None = Field(
         default=None, description="Filter bookmarks with/without errors"
     )
-    has_labels: Optional[bool] = Field(
+    has_labels: bool | None = Field(
         default=None, description="Filter bookmarks with/without labels"
     )
-    is_marked: Optional[bool] = Field(
+    is_marked: bool | None = Field(
         default=None, description="Filter by marked (favorite) status"
     )
-    is_archived: Optional[bool] = Field(
+    is_archived: bool | None = Field(
         default=None, description="Filter by archived status"
     )
-    range_start: Optional[str] = Field(default=None, description="Date range start")
-    range_end: Optional[str] = Field(default=None, description="Date range end")
-    read_status: Optional[List[str]] = Field(
+    range_start: str | None = Field(default=None, description="Date range start")
+    range_end: str | None = Field(default=None, description="Date range end")
+    read_status: list[str] | None = Field(
         default=None, description="Read progress status"
     )
-    updated_since: Optional[datetime] = Field(
+    updated_since: datetime | None = Field(
         default=None, description="Retrieve bookmarks updated after this date"
     )
-    id: Optional[str] = Field(default=None, description="Filter by bookmark ID(s)")
-    collection: Optional[str] = Field(
-        default=None, description="Filter by collection ID"
-    )
+    id: str | None = Field(default=None, description="Filter by bookmark ID(s)")
+    collection: str | None = Field(default=None, description="Filter by collection ID")
 
     @field_serializer("updated_since", when_used="json")
-    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         """Serialize datetime fields to ISO format."""
         if value is None:
             return None
         return value.isoformat()
 
-    def to_query_params(self) -> Dict[str, Any]:
+    def to_query_params(self) -> dict[str, Any]:
         """Convert parameters to query string dictionary."""
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         for field_name, field_value in self.model_dump(exclude_none=True).items():
             if field_value is None:
@@ -263,10 +251,10 @@ class BookmarkCreateRequest(BaseModel):
     """Request payload for creating a new bookmark."""
 
     url: str = Field(..., description="The URL to bookmark")
-    title: Optional[str] = Field(
+    title: str | None = Field(
         default=None, description="Optional title for the bookmark"
     )
-    labels: List[str] = Field(
+    labels: list[str] = Field(
         default_factory=list, description="Optional labels for the bookmark"
     )
 
@@ -282,10 +270,10 @@ class BookmarkCreateResult(BaseModel):
     """Complete result from creating a bookmark, including response headers."""
 
     response: BookmarkCreateResponse = Field(..., description="API response body")
-    bookmark_id: Optional[str] = Field(
+    bookmark_id: str | None = Field(
         default=None, description="ID of the created bookmark from Bookmark-Id header"
     )
-    location: Optional[str] = Field(
+    location: str | None = Field(
         default=None, description="URL of the created resource from Location header"
     )
 
@@ -293,15 +281,13 @@ class BookmarkCreateResult(BaseModel):
 class MarkdownExportMetadata(BaseModel):
     """Metadata parsed from markdown export YAML frontmatter."""
 
-    title: Optional[str] = Field(default=None, description="Article title")
-    saved: Optional[str] = Field(
-        default=None, description="Date when bookmark was saved"
-    )
-    published: Optional[str] = Field(default=None, description="Publication date")
-    website: Optional[str] = Field(default=None, description="Website domain")
-    source: Optional[str] = Field(default=None, description="Source URL")
-    authors: Optional[List[str]] = Field(default=None, description="Article authors")
-    labels: Optional[List[str]] = Field(default=None, description="Bookmark labels")
+    title: str | None = Field(default=None, description="Article title")
+    saved: str | None = Field(default=None, description="Date when bookmark was saved")
+    published: str | None = Field(default=None, description="Publication date")
+    website: str | None = Field(default=None, description="Website domain")
+    source: str | None = Field(default=None, description="Source URL")
+    authors: list[str] | None = Field(default=None, description="Article authors")
+    labels: list[str] | None = Field(default=None, description="Bookmark labels")
 
 
 class Highlight(BaseModel):
@@ -313,17 +299,17 @@ class Highlight(BaseModel):
     bookmark_href: str = Field(..., description="API URL of the bookmarked content")
     bookmark_title: str = Field(..., description="Title of the bookmarked content")
     bookmark_url: str = Field(..., description="URL of the bookmarked content")
-    bookmark_site_name: Optional[str] = Field(
+    bookmark_site_name: str | None = Field(
         default=None, description="Name of the website where the content is from"
     )
     text: str = Field(..., description="The highlighted text content")
     created: datetime = Field(..., description="When the highlight was created")
-    updated: Optional[datetime] = Field(
+    updated: datetime | None = Field(
         default=None, description="When the highlight was last updated"
     )
 
     @field_serializer("created", "updated", when_used="json")
-    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         """Serialize datetime fields to ISO format."""
         return value.isoformat() if value is not None else None
 
@@ -331,13 +317,13 @@ class Highlight(BaseModel):
 class HighlightListResponse(BaseModel):
     """Response model for the list highlights endpoint."""
 
-    items: List[Highlight] = Field(
+    items: list[Highlight] = Field(
         default_factory=list, description="List of highlights"
     )
     total_count: int = Field(..., description="Total number of highlights available")
     page: int = Field(..., description="Current page number")
     total_pages: int = Field(..., description="Total number of pages available")
-    links: Dict[str, Optional[str]] = Field(
+    links: dict[str, str | None] = Field(
         default_factory=dict, description="Pagination links"
     )
 
@@ -345,17 +331,17 @@ class HighlightListResponse(BaseModel):
 class HighlightListParams(BaseModel):
     """Parameters for fetching highlights list."""
 
-    limit: Optional[int] = Field(
+    limit: int | None = Field(
         default=None,
         ge=1,
         le=100,
         description="Number of items per page (1-100)",
     )
-    offset: Optional[int] = Field(default=None, ge=0, description="Pagination offset")
+    offset: int | None = Field(default=None, ge=0, description="Pagination offset")
 
-    def to_query_params(self) -> Dict[str, Union[str, int]]:
+    def to_query_params(self) -> dict[str, str | int]:
         """Convert parameters to query string dictionary."""
-        params: Dict[str, Union[str, int]] = {}
+        params: dict[str, str | int] = {}
         if self.limit is not None:
             params["limit"] = self.limit
         if self.offset is not None:
@@ -366,7 +352,7 @@ class HighlightListParams(BaseModel):
 class MarkdownExportResult(BaseModel):
     """Result of markdown export with parsed metadata and content."""
 
-    metadata: Optional[MarkdownExportMetadata] = Field(
+    metadata: MarkdownExportMetadata | None = Field(
         default=None, description="Parsed frontmatter metadata"
     )
     content: str = Field(..., description="Markdown content without frontmatter")

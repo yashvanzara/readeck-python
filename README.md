@@ -166,10 +166,9 @@ uv sync --dev
 # Run tests
 uv run pytest
 
-# Run linting
-uv run black src tests
-uv run isort src tests
-uv run flake8 src tests
+# Run linting and formatting
+uv run ruff check src tests --fix
+uv run ruff format src tests
 uv run mypy src
 
 # Run all checks

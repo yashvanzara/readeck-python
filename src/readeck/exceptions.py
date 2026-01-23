@@ -1,6 +1,6 @@
 """Custom exceptions for the Readeck client."""
 
-from typing import Any, Optional
+from typing import Any
 
 
 class ReadeckError(Exception):
@@ -9,8 +9,8 @@ class ReadeckError(Exception):
     def __init__(
         self,
         message: str,
-        status_code: Optional[int] = None,
-        response_data: Optional[Any] = None,
+        status_code: int | None = None,
+        response_data: Any | None = None,
     ) -> None:
         """Initialize ReadeckError.
 

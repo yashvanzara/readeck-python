@@ -1,6 +1,6 @@
 """Readeck API client implementation."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 from urllib.parse import urljoin
 
 import httpx
@@ -87,7 +87,7 @@ class ReadeckClient:
 
     async def _make_request(
         self, method: str, endpoint: str, **kwargs: Any
-    ) -> Union[Dict[str, Any], List[Any]]:
+    ) -> dict[str, Any] | list[Any]:
         """Make an HTTP request to the API.
 
         Args:
@@ -150,15 +150,15 @@ class ReadeckClient:
 
             # Parse JSON response
             try:
-                json_response: Union[Dict[str, Any], List[Any]] = response.json()
+                json_response: dict[str, Any] | list[Any] = response.json()
                 return json_response
             except Exception as e:
-                raise ReadeckError(f"Failed to parse JSON response: {e}")
+                raise ReadeckError(f"Failed to parse JSON response: {e}") from e
 
         except httpx.TimeoutException as e:
-            raise ReadeckError(f"Request timeout: {e}")
+            raise ReadeckError(f"Request timeout: {e}") from e
         except httpx.RequestError as e:
-            raise ReadeckError(f"Request error: {e}")
+            raise ReadeckError(f"Request error: {e}") from e
 
     async def get_user_profile(self) -> UserProfile:
         """Get the current user's profile.
@@ -174,11 +174,11 @@ class ReadeckClient:
             data = await self._make_request("GET", "profile")
             return UserProfile.model_validate(data)
         except ValidationError as e:
-            raise ReadeckError(f"Failed to parse user profile response: {e}")
+            raise ReadeckError(f"Failed to parse user profile response: {e}") from e
 
     async def get_bookmarks(
-        self, params: Optional[BookmarkListParams] = None
-    ) -> List[Bookmark]:
+        self, params: BookmarkListParams | None = None
+    ) -> list[Bookmark]:
         """Get a list of bookmarks.
 
         Args:
@@ -203,10 +203,10 @@ class ReadeckClient:
                     f"Unexpected response format: expected list, got {type(data)}"
                 )
         except ValidationError as e:
-            raise ReadeckError(f"Failed to parse bookmarks response: {e}")
+            raise ReadeckError(f"Failed to parse bookmarks response: {e}") from e
 
     async def create_bookmark(
-        self, url: str, title: Optional[str] = None, labels: Optional[List[str]] = None
+        self, url: str, title: str | None = None, labels: list[str] | None = None
     ) -> BookmarkCreateResult:
         """Create a new bookmark.
 
@@ -277,7 +277,7 @@ class ReadeckClient:
             try:
                 json_response = response.json()
             except Exception as e:
-                raise ReadeckError(f"Failed to parse JSON response: {e}")
+                raise ReadeckError(f"Failed to parse JSON response: {e}") from e
 
             try:
                 bookmark_response = BookmarkCreateResponse.model_validate(json_response)
@@ -292,12 +292,14 @@ class ReadeckClient:
                     location=location,
                 )
             except ValidationError as e:
-                raise ReadeckError(f"Failed to parse bookmark creation response: {e}")
+                raise ReadeckError(
+                    f"Failed to parse bookmark creation response: {e}"
+                ) from e
 
         except httpx.TimeoutException as e:
-            raise ReadeckError(f"Request timeout: {e}")
+            raise ReadeckError(f"Request timeout: {e}") from e
         except httpx.RequestError as e:
-            raise ReadeckError(f"Request error: {e}")
+            raise ReadeckError(f"Request error: {e}") from e
 
     async def get_bookmark(self, bookmark_id: str) -> Bookmark:
         """Get details for a single bookmark.
@@ -317,11 +319,11 @@ class ReadeckClient:
             data = await self._make_request("GET", f"bookmarks/{bookmark_id}")
             return Bookmark.model_validate(data)
         except ValidationError as e:
-            raise ReadeckError(f"Failed to parse bookmark response: {e}")
+            raise ReadeckError(f"Failed to parse bookmark response: {e}") from e
 
     async def export_bookmark(
         self, bookmark_id: str, format: str = "md"
-    ) -> Union[str, bytes]:
+    ) -> str | bytes:
         """Export a bookmark in the specified format.
 
         Args:
@@ -390,9 +392,9 @@ class ReadeckClient:
                 return response.content
 
         except httpx.TimeoutException as e:
-            raise ReadeckError(f"Request timeout: {e}")
+            raise ReadeckError(f"Request timeout: {e}") from e
         except httpx.RequestError as e:
-            raise ReadeckError(f"Request error: {e}")
+            raise ReadeckError(f"Request error: {e}") from e
 
     async def export_bookmark_parsed(self, bookmark_id: str) -> MarkdownExportResult:
         """Export a bookmark in markdown format with parsed frontmatter metadata.
@@ -422,7 +424,7 @@ class ReadeckClient:
         )
 
     async def get_highlights(
-        self, limit: Optional[int] = None, offset: Optional[int] = None
+        self, limit: int | None = None, offset: int | None = None
     ) -> HighlightListResponse:
         """Fetch a list of highlights/annotations.
 
@@ -486,7 +488,7 @@ class ReadeckClient:
             try:
                 json_response = response.json()
             except Exception as e:
-                raise ReadeckError(f"Failed to parse JSON response: {e}")
+                raise ReadeckError(f"Failed to parse JSON response: {e}") from e
 
             # Parse the response
             if not isinstance(json_response, list):
@@ -501,9 +503,9 @@ class ReadeckClient:
             total_pages = int(response_headers.get("Total-Pages", 1))
 
             # Parse Link header if present
-            links: Dict[str, Optional[str]] = {}
+            links: dict[str, str | None] = {}
             if "Link" in response_headers:
-                # Example: <https://readeck.example.com/api/bookmarks/annotations?limit=1&offset=199>; rel="previous"
+                # Example: <https://example.com/api/annotations?limit=1>; rel="previous"
                 for link in response_headers["Link"].split(","):
                     link = link.strip()
                     if ";" in link:
@@ -521,16 +523,16 @@ class ReadeckClient:
             )
 
         except httpx.TimeoutException as e:
-            raise ReadeckError(f"Request timeout: {e}")
+            raise ReadeckError(f"Request timeout: {e}") from e
         except httpx.RequestError as e:
-            raise ReadeckError(f"Request error: {e}")
+            raise ReadeckError(f"Request error: {e}") from e
         except ValidationError as e:
-            raise ReadeckError(f"Failed to parse highlights response: {e}")
+            raise ReadeckError(f"Failed to parse highlights response: {e}") from e
 
     @staticmethod
     def _parse_markdown_frontmatter(
         content: str,
-    ) -> tuple[Optional[MarkdownExportMetadata], str]:
+    ) -> tuple[MarkdownExportMetadata | None, str]:
         """Parse YAML frontmatter from markdown content.
 
         Args:
