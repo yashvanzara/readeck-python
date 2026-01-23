@@ -249,7 +249,9 @@ class TestBookmarkListParams:
     def test_bookmark_list_params_none_values_excluded(self):
         """Test that None values are excluded from query params."""
         params = BookmarkListParams(
-            limit=10, offset=None, search="test"  # This should be excluded
+            limit=10,
+            offset=None,
+            search="test",  # This should be excluded
         )
         query_params = params.to_query_params()
 

@@ -1,6 +1,7 @@
 """Test fixtures and utilities."""
 
-from typing import Any, AsyncGenerator, Dict
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 
@@ -8,7 +9,7 @@ from readeck import ReadeckClient
 
 
 @pytest.fixture
-def mock_user_profile_data() -> Dict[str, Any]:
+def mock_user_profile_data() -> dict[str, Any]:
     """Mock user profile response data."""
     return {
         "provider": {
@@ -69,7 +70,7 @@ async def async_readeck_client() -> AsyncGenerator[ReadeckClient, None]:
 
 
 @pytest.fixture
-def mock_bookmark_data() -> Dict[str, Any]:
+def mock_bookmark_data() -> dict[str, Any]:
     """Mock bookmark response data."""
     return {
         "id": "abc123",
