@@ -85,6 +85,57 @@ class ReadeckClient:
         """Build the full URL for an API endpoint."""
         return urljoin(f"{self.base_url}/", f"api/{endpoint.lstrip('/')}")
 
+    @staticmethod
+    def _handle_response_errors(response: httpx.Response) -> None:
+        """Raise appropriate exceptions for non-successful HTTP responses.
+
+        Args:
+            response: The HTTP response to check
+
+        Raises:
+            ReadeckAuthError: For 401/403 responses
+            ReadeckNotFoundError: For 404 responses
+            ReadeckValidationError: For 400/422 responses
+            ReadeckServerError: For 5xx responses
+            ReadeckError: For other unsuccessful responses
+        """
+        if response.status_code == 401:
+            raise ReadeckAuthError(
+                "Authentication failed. Please check your token.",
+                status_code=response.status_code,
+            )
+        elif response.status_code == 403:
+            raise ReadeckAuthError(
+                "Access forbidden. Insufficient permissions.",
+                status_code=response.status_code,
+            )
+        elif response.status_code == 404:
+            raise ReadeckNotFoundError(
+                "Resource not found.",
+                status_code=response.status_code,
+            )
+        elif response.status_code in (400, 422):
+            error_data = None
+            try:
+                error_data = response.json()
+            except Exception:
+                pass
+            raise ReadeckValidationError(
+                f"Validation error: {response.text}",
+                status_code=response.status_code,
+                response_data=error_data,
+            )
+        elif 500 <= response.status_code < 600:
+            raise ReadeckServerError(
+                f"Server error: {response.text}",
+                status_code=response.status_code,
+            )
+        elif not response.is_success:
+            raise ReadeckError(
+                f"HTTP {response.status_code}: {response.text}",
+                status_code=response.status_code,
+            )
+
     async def _make_request(
         self, method: str, endpoint: str, **kwargs: Any
     ) -> dict[str, Any] | list[Any]:
@@ -109,44 +160,7 @@ class ReadeckClient:
 
         try:
             response = await self._client.request(method, url, **kwargs)
-
-            # Handle different status codes
-            if response.status_code == 401:
-                raise ReadeckAuthError(
-                    "Authentication failed. Please check your token.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 403:
-                raise ReadeckAuthError(
-                    "Access forbidden. Insufficient permissions.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 404:
-                raise ReadeckNotFoundError(
-                    "Resource not found.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code in (400, 422):
-                error_data = None
-                try:
-                    error_data = response.json()
-                except Exception:
-                    pass
-                raise ReadeckValidationError(
-                    f"Validation error: {response.text}",
-                    status_code=response.status_code,
-                    response_data=error_data,
-                )
-            elif 500 <= response.status_code < 600:
-                raise ReadeckServerError(
-                    f"Server error: {response.text}",
-                    status_code=response.status_code,
-                )
-            elif not response.is_success:
-                raise ReadeckError(
-                    f"HTTP {response.status_code}: {response.text}",
-                    status_code=response.status_code,
-                )
+            self._handle_response_errors(response)
 
             # Parse JSON response
             try:
@@ -237,41 +251,8 @@ class ReadeckClient:
                 headers={"Content-Type": "application/json"},
             )
 
-            # Handle different status codes
-            if response.status_code == 401:
-                raise ReadeckAuthError(
-                    "Authentication failed. Please check your token.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 403:
-                raise ReadeckAuthError(
-                    "Access forbidden. Insufficient permissions.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 422:
-                error_data = None
-                try:
-                    error_data = response.json()
-                except Exception:
-                    pass
-                raise ReadeckValidationError(
-                    f"Validation error: {response.text}",
-                    status_code=response.status_code,
-                    response_data=error_data,
-                )
-            elif response.status_code == 202:
-                # 202 Accepted - bookmark creation accepted
-                pass
-            elif 500 <= response.status_code < 600:
-                raise ReadeckServerError(
-                    f"Server error: {response.text}",
-                    status_code=response.status_code,
-                )
-            elif not response.is_success:
-                raise ReadeckError(
-                    f"HTTP {response.status_code}: {response.text}",
-                    status_code=response.status_code,
-                )
+            if response.status_code != 202:
+                self._handle_response_errors(response)
 
             # Parse JSON response
             try:
@@ -358,32 +339,7 @@ class ReadeckClient:
                 headers={"Accept": accept_header},
             )
 
-            # Handle different status codes
-            if response.status_code == 401:
-                raise ReadeckAuthError(
-                    "Authentication failed. Please check your token.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 403:
-                raise ReadeckAuthError(
-                    "Access forbidden. Insufficient permissions.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 404:
-                raise ReadeckNotFoundError(
-                    f"Bookmark '{bookmark_id}' not found or article not available.",
-                    status_code=response.status_code,
-                )
-            elif 500 <= response.status_code < 600:
-                raise ReadeckServerError(
-                    f"Server error: {response.text}",
-                    status_code=response.status_code,
-                )
-            elif not response.is_success:
-                raise ReadeckError(
-                    f"HTTP {response.status_code}: {response.text}",
-                    status_code=response.status_code,
-                )
+            self._handle_response_errors(response)
 
             # Return content based on format
             if format == "md":
@@ -446,43 +402,7 @@ class ReadeckClient:
             url = self._build_url("bookmarks/annotations")
             response = await self._client.get(url, params=params.to_query_params())
 
-            # Handle different status codes
-            if response.status_code == 401:
-                raise ReadeckAuthError(
-                    "Authentication failed. Please check your token.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 403:
-                raise ReadeckAuthError(
-                    "Access forbidden. Insufficient permissions.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code == 404:
-                raise ReadeckNotFoundError(
-                    "Resource not found.",
-                    status_code=response.status_code,
-                )
-            elif response.status_code in (400, 422):
-                error_data = None
-                try:
-                    error_data = response.json()
-                except Exception:
-                    pass
-                raise ReadeckValidationError(
-                    f"Validation error: {response.text}",
-                    status_code=response.status_code,
-                    response_data=error_data,
-                )
-            elif 500 <= response.status_code < 600:
-                raise ReadeckServerError(
-                    f"Server error: {response.text}",
-                    status_code=response.status_code,
-                )
-            elif not response.is_success:
-                raise ReadeckError(
-                    f"HTTP {response.status_code}: {response.text}",
-                    status_code=response.status_code,
-                )
+            self._handle_response_errors(response)
 
             # Parse JSON response
             try:
@@ -579,6 +499,30 @@ class ReadeckClient:
         except (yaml.YAMLError, ValidationError):
             # If parsing fails, return content as-is
             return None, content
+
+    async def delete_bookmark(self, bookmark_id: str) -> None:
+        """Delete a bookmark.
+
+        Args:
+            bookmark_id: The ID of the bookmark to delete
+
+        Raises:
+            ReadeckAuthError: If authentication fails (401, 403)
+            ReadeckNotFoundError: If bookmark is not found (404)
+            ReadeckServerError: For server errors (5xx)
+            ReadeckError: For other API errors
+        """
+        try:
+            url = self._build_url(f"bookmarks/{bookmark_id}")
+            response = await self._client.delete(url)
+
+            if response.status_code != 204:
+                self._handle_response_errors(response)
+
+        except httpx.TimeoutException as e:
+            raise ReadeckError(f"Request timeout: {e}") from e
+        except httpx.RequestError as e:
+            raise ReadeckError(f"Request error: {e}") from e
 
     # Health check method for testing connectivity
     async def health_check(self) -> bool:

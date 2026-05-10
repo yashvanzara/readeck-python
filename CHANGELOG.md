@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-10
+
+### Added
+- `delete_bookmark()` - Delete a bookmark by ID
+
+### Changed
+- Refactored duplicated HTTP error handling into `_handle_response_errors()` helper
+
 ## [0.1.5] - 2025-07-25
 
 ### Added
