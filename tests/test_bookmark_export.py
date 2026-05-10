@@ -203,7 +203,7 @@ More content here.
             await client.export_bookmark(bookmark_id, format="md")
 
         assert exc_info.value.status_code == 400
-        assert "HTTP 400" in str(exc_info.value)
+        assert "Validation error" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_export_bookmark_correct_headers_markdown(
