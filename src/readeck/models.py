@@ -3,7 +3,14 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+)
 
 
 class EmailSettings(BaseModel):
@@ -276,6 +283,125 @@ class BookmarkCreateResult(BaseModel):
     location: str | None = Field(
         default=None, description="URL of the created resource from Location header"
     )
+
+
+class BookmarkUpdateRequest(BaseModel):
+    """Fields that can be changed on an existing bookmark."""
+
+    title: str | None = None
+    description: str | None = None
+    authors: list[str] | None = None
+    labels: list[str] | None = None
+    add_labels: list[str] | None = None
+    remove_labels: list[str] | None = None
+    is_marked: bool | None = None
+    is_archived: bool | None = None
+    is_deleted: bool | None = None
+    read_progress: int | None = Field(default=None, ge=0, le=100)
+    read_anchor: str | None = None
+
+
+class BookmarkUpdateResponse(BaseModel):
+    """Fields returned by a bookmark update operation."""
+
+    model_config = ConfigDict(extra="allow")
+
+    href: str
+
+
+class Label(BaseModel):
+    """A bookmark label and its usage count."""
+
+    name: str
+    count: int
+    href: str
+    href_bookmarks: str
+
+
+class ReadeckVersion(BaseModel):
+    """Version data returned by the public instance information endpoint."""
+
+    canonical: str
+    release: str
+    build: str
+
+
+class ReadeckInfo(BaseModel):
+    """Public Readeck instance information."""
+
+    version: ReadeckVersion
+    features: list[str] = Field(default_factory=list)
+
+    @property
+    def supports_oauth(self) -> bool:
+        """Whether the instance advertises OAuth support."""
+        return "oauth" in self.features
+
+
+class OAuthServerMetadata(BaseModel):
+    """OAuth 2.0 authorization-server metadata (RFC 8414)."""
+
+    issuer: AnyHttpUrl
+    authorization_endpoint: AnyHttpUrl | None = None
+    token_endpoint: AnyHttpUrl
+    device_authorization_endpoint: AnyHttpUrl | None = None
+    registration_endpoint: AnyHttpUrl | None = None
+    revocation_endpoint: AnyHttpUrl | None = None
+    grant_types_supported: list[str] = Field(default_factory=list)
+    response_types_supported: list[str] = Field(default_factory=list)
+    scopes_supported: list[str] = Field(default_factory=list)
+    code_challenge_methods_supported: list[str] = Field(default_factory=list)
+    token_endpoint_auth_methods_supported: list[str] = Field(default_factory=list)
+
+
+class OAuthClientRegistrationRequest(BaseModel):
+    """Dynamic client registration request for Readeck's OAuth server."""
+
+    client_name: str = Field(min_length=1, max_length=128)
+    client_uri: AnyHttpUrl
+    software_id: str = Field(min_length=1, max_length=128)
+    software_version: str = Field(min_length=1, max_length=64)
+    logo_uri: str | None = None
+    redirect_uris: list[str] = Field(default_factory=list)
+    grant_types: list[str] = Field(
+        default_factory=lambda: ["urn:ietf:params:oauth:grant-type:device_code"]
+    )
+    response_types: list[str] = Field(default_factory=list)
+    token_endpoint_auth_method: str = "none"
+
+    @field_validator("client_uri")
+    @classmethod
+    def require_https_client_uri(cls, value: AnyHttpUrl) -> AnyHttpUrl:
+        """Require HTTPS for a dynamically registered client's website."""
+        if value.scheme != "https":
+            raise ValueError("client_uri must use HTTPS")
+        return value
+
+
+class OAuthClientRegistration(OAuthClientRegistrationRequest):
+    """A dynamically registered public OAuth client."""
+
+    client_id: str
+
+
+class DeviceAuthorization(BaseModel):
+    """A device authorization request that awaits user approval."""
+
+    device_code: str
+    user_code: str
+    verification_uri: AnyHttpUrl
+    verification_uri_complete: AnyHttpUrl
+    expires_in: int = Field(gt=0)
+    interval: int = Field(default=5, gt=0)
+
+
+class OAuthToken(BaseModel):
+    """Token response from an OAuth grant exchange."""
+
+    id: str
+    access_token: str
+    token_type: str
+    scope: str | None = None
 
 
 class MarkdownExportMetadata(BaseModel):

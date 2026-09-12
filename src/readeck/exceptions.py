@@ -53,3 +53,28 @@ class ReadeckServerError(ReadeckError):
     """Raised when the server returns a 5xx error."""
 
     pass
+
+
+class ReadeckOAuthError(ReadeckError):
+    """Raised when an OAuth endpoint returns a protocol error."""
+
+    def __init__(
+        self,
+        error: str,
+        description: str | None = None,
+        uri: str | None = None,
+        status_code: int | None = None,
+    ) -> None:
+        message = error if description is None else f"{error}: {description}"
+        super().__init__(message, status_code=status_code)
+        self.error = error
+        self.description = description
+        self.uri = uri
+
+
+class ReadeckOAuthPendingError(ReadeckOAuthError):
+    """Raised when device authorization is still awaiting user approval."""
+
+
+class ReadeckOAuthSlowDownError(ReadeckOAuthError):
+    """Raised when the authorization server requires slower token polling."""
