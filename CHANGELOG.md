@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-12
+
+### Added
+- `ReadeckOAuthClient` with OAuth server discovery, dynamic public-client
+  registration, device authorization, token polling, and token revocation.
+- Typed OAuth, instance-information, label, and bookmark-update models.
+- `update_bookmark()` and `get_labels()` methods on `ReadeckClient`.
+
+### Changed
+- Preserve Readeck deployment path prefixes when constructing API URLs.
+- Centralize authenticated client HTTP error handling.
+
+### Security
+- Device authorization polling and OAuth errors do not include device or access
+  token values in raised error messages.
+
 ## [0.2.0] - 2026-05-10
 
 ### Added
