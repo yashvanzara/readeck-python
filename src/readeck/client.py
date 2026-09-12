@@ -1,7 +1,6 @@
 """Readeck API client implementation."""
 
 from typing import Any
-from urllib.parse import urljoin
 
 import httpx
 import yaml
@@ -20,9 +19,12 @@ from .models import (
     BookmarkCreateResponse,
     BookmarkCreateResult,
     BookmarkListParams,
+    BookmarkUpdateRequest,
+    BookmarkUpdateResponse,
     Highlight,
     HighlightListParams,
     HighlightListResponse,
+    Label,
     MarkdownExportMetadata,
     MarkdownExportResult,
     UserProfile,
@@ -83,7 +85,7 @@ class ReadeckClient:
 
     def _build_url(self, endpoint: str) -> str:
         """Build the full URL for an API endpoint."""
-        return urljoin(f"{self.base_url}/", f"api/{endpoint.lstrip('/')}")
+        return f"{self.base_url}/api/{endpoint.lstrip('/')}"
 
     @staticmethod
     def _handle_response_errors(response: httpx.Response) -> None:
@@ -523,6 +525,32 @@ class ReadeckClient:
             raise ReadeckError(f"Request timeout: {e}") from e
         except httpx.RequestError as e:
             raise ReadeckError(f"Request error: {e}") from e
+
+    async def update_bookmark(
+        self, bookmark_id: str, update: BookmarkUpdateRequest
+    ) -> BookmarkUpdateResponse:
+        """Update one or more fields on an existing bookmark."""
+        try:
+            data = await self._make_request(
+                "PATCH",
+                f"bookmarks/{bookmark_id}",
+                json=update.model_dump(exclude_none=True),
+            )
+            return BookmarkUpdateResponse.model_validate(data)
+        except ValidationError as e:
+            raise ReadeckError(f"Failed to parse bookmark update response: {e}") from e
+
+    async def get_labels(self) -> list[Label]:
+        """List all bookmark labels for the authenticated user."""
+        try:
+            data = await self._make_request("GET", "bookmarks/labels")
+            if not isinstance(data, list):
+                raise ReadeckError(
+                    f"Unexpected response format: expected list, got {type(data)}"
+                )
+            return [Label.model_validate(label) for label in data]
+        except ValidationError as e:
+            raise ReadeckError(f"Failed to parse labels response: {e}") from e
 
     # Health check method for testing connectivity
     async def health_check(self) -> bool:
