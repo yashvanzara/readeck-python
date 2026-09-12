@@ -1,11 +1,38 @@
 """Test fixtures and utilities."""
 
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from typing import Any
 
 import pytest
 
 from readeck import ReadeckClient
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Do not apply the unit-test coverage gate to live integration runs."""
+    markexpr = (config.option.markexpr or "").strip()
+    args = [str(arg) for arg in config.args]
+    integration_only = "integration" in markexpr or (
+        bool(args) and all("integration" in arg for arg in args)
+    )
+    if not integration_only:
+        return
+    cov = config.pluginmanager.getplugin("_cov")
+    if cov is not None:
+        config.pluginmanager.unregister(cov)
+
+
+def pytest_ignore_collect(collection_path: Path, config: pytest.Config) -> bool | None:
+    """Skip the live Docker suite unless it was requested explicitly."""
+    if "integration" not in Path(collection_path).parts:
+        return None
+    markexpr = (config.option.markexpr or "").strip()
+    if "integration" in markexpr:
+        return False
+    if any("integration" in str(arg) for arg in config.args):
+        return False
+    return True
 
 
 @pytest.fixture
