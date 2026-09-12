@@ -96,6 +96,11 @@ class TestUserSettings:
         assert settings.reader_settings.font == "Helvetica"
         assert settings.reader_settings.font_size == 14
 
+    def test_user_settings_without_reader_settings(self):
+        """Live Readeck may omit reader settings for a newly created user."""
+        settings = UserSettings(debug_info=False)
+        assert settings.reader_settings is None
+
 
 class TestUser:
     """Test User model."""

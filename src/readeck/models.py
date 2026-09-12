@@ -35,7 +35,9 @@ class UserSettings(BaseModel):
     """User settings and preferences."""
 
     debug_info: bool = Field(..., description="Enable debug information")
-    reader_settings: ReaderSettings = Field(..., description="Reader configuration")
+    reader_settings: ReaderSettings | None = Field(
+        default=None, description="Reader configuration"
+    )
     lang: str = Field(default="en-US", description="Language setting")
     addon_reminder: bool = Field(default=True, description="Show addon reminders")
     email_settings: EmailSettings = Field(

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-12
+
+### Added
+- Docker Compose integration tests against a live Readeck instance.
+
+### Changed
+- Default `pytest` runs skip integration tests unless they are selected
+  explicitly with `-m integration` or by targeting `tests/integration`.
+- Integration-only pytest runs disable coverage so the 80% unit-test gate
+  does not fail a live Docker session.
+- Accept user profiles that omit `reader_settings`, matching live Readeck
+  responses for newly created users.
+
 ## [0.3.0] - 2026-09-12
 
 ### Added

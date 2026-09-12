@@ -106,6 +106,9 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+    "integration: live Readeck tests via Docker Compose",
+]
 addopts = [
     "--cov=src/readeck",
     "--cov-report=term-missing",

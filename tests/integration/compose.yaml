@@ -1,0 +1,20 @@
+services:
+  app:
+    image: codeberg.org/readeck/readeck:0.23.2
+    ports:
+      - "18765:8000"
+    environment:
+      READECK_LOG_LEVEL: info
+      READECK_SERVER_HOST: "0.0.0.0"
+      READECK_SERVER_PORT: 8000
+      READECK_LOG_FORMAT: text
+    volumes:
+      - ${READECK_ITEST_DATA:-/tmp/readeck-python-itest}:/readeck
+    security_opt:
+      - no-new-privileges
+    healthcheck:
+      test: ["CMD", "/bin/readeck", "healthcheck", "-config", "config.toml"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+      start_period: 10s

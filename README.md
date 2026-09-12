@@ -166,6 +166,9 @@ uv sync --dev
 # Run tests
 uv run pytest
 
+# Run integration tests (requires Docker)
+uv run pytest tests/integration
+
 # Run linting and formatting
 uv run ruff check src tests --fix
 uv run ruff format src tests
